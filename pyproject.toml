@@ -1,0 +1,193 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "beryl-ax-pineapple"
+version = "0.1.0"
+description = "MCP Kali Server integration for GL.iNet Beryl AX (MT-3000) - AI-driven security automation with OpenWrt"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Security Research Team"}
+]
+keywords = ["security", "pentesting", "mcp", "openwrt", "kali", "beryl-ax"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: System :: Networking :: Monitoring",
+]
+
+dependencies = [
+    # Web framework
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+
+    # Authentication & Security
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-multipart>=0.0.6",
+
+    # Database
+    "sqlalchemy>=2.0.25",
+    "alembic>=1.13.0",
+    "psycopg2-binary>=2.9.9",  # PostgreSQL
+    "aiosqlite>=0.19.0",  # SQLite async
+
+    # Network & Security Tools
+    "scapy>=2.5.0",
+    "pyshark>=0.6.0",
+    "paramiko>=3.4.0",  # SSH client
+    "fabric>=3.2.2",  # Remote execution
+
+    # MCP Protocol
+    "mcp>=0.9.0",
+
+    # Data processing
+    "pandas>=2.1.4",
+    "numpy>=1.26.0",
+
+    # HTTP clients
+    "httpx>=0.26.0",
+    "aiohttp>=3.9.1",
+
+    # Utilities
+    "python-dotenv>=1.0.0",
+    "loguru>=0.7.2",
+    "tenacity>=8.2.3",  # Retry logic
+    "click>=8.1.7",  # CLI
+
+    # Validation & sanitization
+    "validators>=0.22.0",
+    "bleach>=6.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Testing
+    "pytest>=7.4.4",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.12.0",
+    "httpx>=0.26.0",  # For testing FastAPI
+
+    # Security scanning
+    "bandit>=1.7.6",
+    "safety>=3.0.0",
+    "semgrep>=1.55.0",
+
+    # Code quality
+    "black>=24.1.0",
+    "ruff>=0.1.14",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+
+    # Documentation
+    "mkdocs>=1.5.3",
+    "mkdocs-material>=9.5.3",
+]
+
+ai = [
+    # AI/LLM integration
+    "anthropic>=0.18.0",
+    "openai>=1.10.0",
+]
+
+monitoring = [
+    # Monitoring & observability
+    "prometheus-client>=0.19.0",
+    "sentry-sdk[fastapi]>=1.40.0",
+]
+
+[project.scripts]
+beryl-server = "remote_host.server:main"
+beryl-mcp = "remote_host.mcp_server:main"
+beryl-cli = "remote_host.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["remote_host*", "router*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --cov=src --cov-report=html --cov-report=term-missing"
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit (security)
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+    "S101",  # use of assert (needed for tests)
+]
+
+[tool.ruff.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106"]  # Allow assert and hardcoded passwords in tests
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "scapy.*",
+    "pyshark.*",
+    "fabric.*",
+]
+ignore_missing_imports = true
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+skips = ["B101", "B601"]  # Skip assert_used, paramiko_calls (both needed)
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*", "*/__pycache__/*", "*/venv/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

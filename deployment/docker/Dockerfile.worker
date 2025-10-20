@@ -1,0 +1,42 @@
+# Beryl AX Pineapple - Background Worker Dockerfile
+
+FROM python:3.11-slim
+
+LABEL maintainer="Beryl AX Pineapple Team"
+LABEL description="Background worker for scan execution and processing"
+
+WORKDIR /app
+
+# Install security tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nmap \
+    tcpdump \
+    tshark \
+    curl \
+    wget \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app user
+RUN useradd -m -u 1000 -s /bin/bash appuser && \
+    mkdir -p /app/data/pcaps /app/logs && \
+    chown -R appuser:appuser /app
+
+# Copy requirements
+COPY pyproject.toml /app/
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -e ".[ai,monitoring]"
+
+# Copy application code
+COPY src/ /app/src/
+
+# Set ownership
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+# Run worker (TODO: implement celery/background task worker)
+CMD ["python", "-m", "remote_host.worker"]

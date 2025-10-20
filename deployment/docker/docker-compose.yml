@@ -1,0 +1,276 @@
+version: '3.8'
+
+################################################################################
+# Beryl AX Pineapple - Docker Compose
+#
+# Complete remote host stack for security automation and analysis.
+#
+# Services:
+#   - postgres: PostgreSQL database for persistent storage
+#   - api: FastAPI REST API server
+#   - mcp: Model Context Protocol server for AI integration
+#   - worker: Background worker for scan execution
+#   - prometheus: Metrics collection
+#   - grafana: Metrics visualization
+#
+# Usage:
+#   docker-compose up -d
+#   docker-compose logs -f api
+#   docker-compose down
+################################################################################
+
+services:
+  # ===========================================================================
+  # PostgreSQL Database
+  # ===========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: beryl-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: beryl_db
+      POSTGRES_USER: beryl_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+    ports:
+      - "5432:5432"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U beryl_user -d beryl_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - beryl-network
+
+  # ===========================================================================
+  # FastAPI REST API Server
+  # ===========================================================================
+  api:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/Dockerfile.api
+    container_name: beryl-api
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      # Server
+      HOST: 0.0.0.0
+      PORT: 8000
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+
+      # Security
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      ROUTER_API_KEY: ${ROUTER_API_KEY:?ROUTER_API_KEY is required}
+
+      # Database
+      DATABASE_URL: postgresql://beryl_user:${POSTGRES_PASSWORD:-changeme_in_production}@postgres:5432/beryl_db
+
+      # Router
+      ROUTER_HOST: ${ROUTER_HOST:-192.168.8.1}
+      ROUTER_SSH_KEY_PATH: /app/keys/router_key
+
+      # MCP
+      MCP_ENABLED: "true"
+
+      # Storage
+      PCAP_STORAGE_PATH: /app/data/pcaps
+      LOG_PATH: /app/logs
+
+      # AI (optional)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+
+    volumes:
+      - pcap_data:/app/data/pcaps
+      - log_data:/app/logs
+      - ssh_keys:/app/keys:ro
+
+    ports:
+      - "8000:8000"
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    networks:
+      - beryl-network
+
+  # ===========================================================================
+  # MCP Server (Model Context Protocol)
+  # ===========================================================================
+  mcp:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/Dockerfile.mcp
+    container_name: beryl-mcp
+    restart: unless-stopped
+
+    depends_on:
+      - api
+
+    environment:
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: 9000
+      DATABASE_URL: postgresql://beryl_user:${POSTGRES_PASSWORD:-changeme_in_production}@postgres:5432/beryl_db
+      SECRET_KEY: ${SECRET_KEY}
+      ROUTER_HOST: ${ROUTER_HOST:-192.168.8.1}
+
+    ports:
+      - "9000:9000"
+
+    networks:
+      - beryl-network
+
+  # ===========================================================================
+  # Background Worker (Scan Execution)
+  # ===========================================================================
+  worker:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/Dockerfile.worker
+    container_name: beryl-worker
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      DATABASE_URL: postgresql://beryl_user:${POSTGRES_PASSWORD:-changeme_in_production}@postgres:5432/beryl_db
+      SECRET_KEY: ${SECRET_KEY}
+      PCAP_STORAGE_PATH: /app/data/pcaps
+      LOG_PATH: /app/logs
+
+    volumes:
+      - pcap_data:/app/data/pcaps
+      - log_data:/app/logs
+
+    # Run with network access for security tools
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+
+    networks:
+      - beryl-network
+
+  # ===========================================================================
+  # Prometheus (Metrics Collection)
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: beryl-prometheus
+    restart: unless-stopped
+
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+    ports:
+      - "9090:9090"
+
+    networks:
+      - beryl-network
+
+  # ===========================================================================
+  # Grafana (Metrics Visualization)
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: beryl-grafana
+    restart: unless-stopped
+
+    depends_on:
+      - prometheus
+
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+
+    ports:
+      - "3000:3000"
+
+    networks:
+      - beryl-network
+
+  # ===========================================================================
+  # Redis (Optional - for task queue and caching)
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: beryl-redis
+    restart: unless-stopped
+
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+    volumes:
+      - redis_data:/data
+
+    ports:
+      - "6379:6379"
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - beryl-network
+
+################################################################################
+# Volumes
+################################################################################
+
+volumes:
+  postgres_data:
+    driver: local
+  pcap_data:
+    driver: local
+  log_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  redis_data:
+    driver: local
+  ssh_keys:
+    driver: local
+
+################################################################################
+# Networks
+################################################################################
+
+networks:
+  beryl-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
