@@ -1,0 +1,162 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+myproject-env/
+venv/
+ENV/
+env/
+.venv
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# OpenWrt Build Artifacts
+*.bin
+*.img
+*.ipk
+*.trx
+*.ubi
+build_dir/
+staging_dir/
+tmp/
+logs/
+.config
+.config.old
+
+# Firmware Files (too large for git - use releases)
+firmware/*.bin
+firmware/*.img
+
+# Packet Captures and Logs
+*.pcap
+*.pcapng
+*.cap
+*.log
+*.log.*
+audit_logs/
+captures/
+
+# Configuration Files with Secrets
+*.conf.local
+*.conf.secret
+*.key
+*.pem
+*.crt
+secrets/
+.env
+.env.local
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# Compiled Files
+*.o
+*.ko
+*.obj
+*.elf
+*.class
+*.pyc
+*.pyo
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# Node.js (if using for UI)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+site/
+
+# Test artifacts
+.coverage
+htmlcov/
+test-results/
