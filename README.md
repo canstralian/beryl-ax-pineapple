@@ -30,6 +30,20 @@ It aims to deliver *WiFi Pineapple-class* functionality with greater transparenc
 * `opkg` package manager with direct access to community repositories
 * `LuCI` and `UCI` configuration interfaces
 
+
+### Defensive Capture Intelligence (Implemented)
+
+The repository now includes a Python parser (`scripts/capture_parser.py`) that supports:
+
+* Parsing JSON/CSV packet export files
+* Building passive network summaries (AP/client/frame counts)
+* Flagging defensive alerts for:
+  * open networks
+  * possible evil-twin SSID collisions
+  * deauth burst activity
+
+This is designed for **authorized monitoring and hardening**, not active attack automation.
+
 ### Core Auditing Toolkit
 
 | Tool                 | Purpose                                                          |
