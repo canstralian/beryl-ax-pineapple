@@ -35,7 +35,7 @@ It aims to deliver *WiFi Pineapple-class* functionality with greater transparenc
 
 The repository now includes a Python parser (`scripts/capture_parser.py`) that supports:
 
-* Parsing JSON/CSV packet export files
+* Parsing JSON, CSV, and `.txt` packet export files (`.txt` treated as CSV-style input)
 * Building passive network summaries (AP/client/frame counts)
 * Flagging defensive alerts for:
   * open networks
