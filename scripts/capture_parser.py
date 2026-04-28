@@ -73,7 +73,7 @@ def _read_capture_records(filename: str) -> List[Dict[str, Any]]:
 
 
 def _build_summary(records: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
-    records = list(records)
+    records = records if isinstance(records, list) else list(records)
     unique_bssids = {r["bssid"] for r in records if r["bssid"]}
     unique_clients = {
         addr
