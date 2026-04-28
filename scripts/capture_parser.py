@@ -65,7 +65,7 @@ def _read_capture_records(filename: str) -> List[Dict[str, Any]]:
         return []
 
     if ext == ".csv":
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(filename, "r", encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f)
             return [_normalize_record(row) for row in reader]
 
