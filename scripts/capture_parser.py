@@ -131,7 +131,7 @@ def _build_alerts(records: Iterable[Dict[str, Any]], thresholds: Dict[str, int])
         )
 
     deauth_count = sum(1 for r in records if r["subtype"] == "deauth")
-    if deauth_count >= thresholds.get("deauth_burst", DEFAULT_THRESHOLDS["deauth_burst"]):
+    if deauth_count >= thresholds["deauth_burst"]:
         alerts.append(
             {
                 "type": "deauth_burst",
