@@ -64,7 +64,7 @@ def _read_capture_records(filename: str) -> List[Dict[str, Any]]:
                 return [_normalize_record(item if isinstance(item, dict) else {}) for item in records]
         return []
 
-    if ext in {".csv", ".txt"}:
+    if ext == ".csv":
         with open(filename, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             return [_normalize_record(row) for row in reader]
