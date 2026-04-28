@@ -176,7 +176,7 @@ def main() -> None:
         print("Usage: capture_parser.py <capture_file>")
         print("\nAccepted formats:")
         print("  - JSON packet arrays")
-        print("  - CSV with packet columns (ssid,bssid,subtype,...) ")
+        print("  - CSV with packet columns (ssid,bssid,subtype,...)")
         sys.exit(1)
 
     capture_file = sys.argv[1]
