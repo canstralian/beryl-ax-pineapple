@@ -122,7 +122,7 @@ def _build_alerts(records: Iterable[Dict[str, Any]], thresholds: Dict[str, int])
         alerts.append(
             {
                 "type": "possible_evil_twin",
-                "severity": "high",
+                "severity": "medium",
                 "message": (
                     "Multiple BSSIDs advertise same SSID: "
                     f"{', '.join(suspicious_ssids)}"
