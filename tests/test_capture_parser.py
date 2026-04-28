@@ -89,3 +89,27 @@ def test_parse_capture_alerts_for_suspicious_patterns():
         assert "deauth_burst" in alert_types
     finally:
         os.unlink(tmp_path)
+
+
+def test_parse_capture_supports_txt_exports():
+    """Test parser supports CSV-style .txt packet exports."""
+    rows = "\n".join(
+        [
+            "ssid,bssid,channel,signal,frame_type,subtype,src,dst,encryption",
+            "Office,aa:bb:cc:dd:ee:10,11,-42,management,beacon,aa:bb:cc:dd:ee:10,ff:ff:ff:ff:ff:ff,wpa2",
+            "Office,aa:bb:cc:dd:ee:10,11,-47,data,,11:22:33:44:55:66,aa:bb:cc:dd:ee:10,wpa2",
+        ]
+    )
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8") as tmp:
+        tmp.write(rows)
+        tmp_path = tmp.name
+
+    try:
+        result = parse_capture(tmp_path)
+        assert result["status"] == "parsed"
+        assert result["summary"]["total_records"] == 2
+        assert result["summary"]["unique_access_points"] == 1
+        assert result["summary"]["unique_clients"] == 2
+    finally:
+        os.unlink(tmp_path)
