@@ -50,7 +50,7 @@ def _normalize_record(raw: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _read_capture_records(filename: str) -> List[Dict[str, Any]]:
-    """Read packet records from a JSON or CSV file."""
+    """Read packet records from a JSON, CSV, or CSV-style TXT file."""
     ext = os.path.splitext(filename)[1].lower()
 
     if ext == ".json":
@@ -64,7 +64,7 @@ def _read_capture_records(filename: str) -> List[Dict[str, Any]]:
                 return [_normalize_record(item if isinstance(item, dict) else {}) for item in records]
         return []
 
-    if ext == ".csv":
+    if ext in {".csv", ".txt"}:
         with open(filename, "r", encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f)
             return [_normalize_record(row) for row in reader]
